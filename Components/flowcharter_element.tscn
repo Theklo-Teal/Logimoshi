@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvrb8xpnejwc8"]
+
+[ext_resource type="Script" uid="uid://dt1ejwf0a8t54" path="res://Components/flowcharter_element.gd" id="1_gclc1"]
+
+[node name="FlowcharterElement" type="Control"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 30.0
+offset_bottom = 30.0
+size_flags_horizontal = 0
+script = ExtResource("1_gclc1")
+
+[node name="Slots" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+mouse_filter = 1

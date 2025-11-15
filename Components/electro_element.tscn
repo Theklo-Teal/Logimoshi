@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://ccwx5sm82gnic"]
+
+[ext_resource type="PackedScene" uid="uid://bvrb8xpnejwc8" path="res://Components/flowcharter_element.tscn" id="1_c6bfd"]
+[ext_resource type="Script" uid="uid://r7tdprmaj5hr" path="res://Components/electro_element.gd" id="2_olc8y"]
+
+[node name="ElectroElement" instance=ExtResource("1_c6bfd")]
+custom_minimum_size = Vector2(80, 50)
+offset_right = 80.0
+offset_bottom = 50.0
+script = ExtResource("2_olc8y")
+lock_design = false
+span = Vector2i(8, 5)
+
+[node name="PanelContainer" type="PanelContainer" parent="." index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

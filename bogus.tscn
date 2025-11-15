@@ -1,0 +1,48 @@
+[gd_scene load_steps=2 format=3 uid="uid://dfnjv4ejkbjnt"]
+
+[sub_resource type="GDScript" id="GDScript_2uqiu"]
+script/source = "extends Node2D
+
+@onready var scrn_size = get_viewport_rect().size
+const MIN_SPD = 4
+const MAX_SPD = 8
+const count = 25
+
+func rand_vector(from:float=0, to:float=1) -> Vector2:
+	var x = randf_range(-1, 1)
+	var y = randf_range(-1, 1)
+	var ans = Vector2(x, y).normalized()
+	return ans * randf_range(from, to)
+
+func _draw() -> void:
+	# Allow the bounds to update if the window is re-sized.
+	scrn_size = get_viewport_rect().size
+	
+func _ready() -> void:
+	# Set a random direction of movement.
+	for n in range(count):
+		var node = Sprite2D.new()
+		node.texture = preload(\"res://Assets/slot.tres\")
+		node.set_meta(\"vel\", rand_vector(MIN_SPD, MAX_SPD))
+		node.position = scrn_size * 0.5
+		add_child(node)
+
+func _process(delta: float) -> void:
+	for each in get_children():
+		var vel = each.get_meta(\"vel\", rand_vector(MIN_SPD, MAX_SPD))
+		each.position += vel
+		if each.position.x < 0:
+			vel = vel.bounce(Vector2(1,0))
+		elif each.position.y < 0:
+			vel = vel.bounce(Vector2(0,1))
+		elif each.position.x > scrn_size.x:
+			vel = vel.bounce(Vector2(-1,0))
+		elif each.position.y > scrn_size.y:
+			vel = vel.bounce(Vector2(0, -1))
+		else:
+			continue
+		each.set_meta(\"vel\", vel)
+"
+
+[node name="Bogus" type="Node2D"]
+script = SubResource("GDScript_2uqiu")

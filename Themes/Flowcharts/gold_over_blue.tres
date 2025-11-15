@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FlowchartStyle" load_steps=2 format=3 uid="uid://dsb2dpwlbo83f"]
+
+[ext_resource type="Script" uid="uid://b1ediuf1dgusm" path="res://Themes/Flowchart_Style.gd" id="1_46dnm"]
+
+[resource]
+script = ExtResource("1_46dnm")
+backdrop = Color(0.176471, 0.231373, 0.454902, 1)
+grid_color = Color(0.14761, 0.30285, 0.496384, 1)
+axis_color = Color(0.631373, 0.588235, 0.270588, 1)
+wire_hiz_color = Color(1, 0.972549, 0.862745, 1)
+wire_high_color = Color(0.741176, 0.717647, 0.419608, 1)
+wire_low_color = Color(0.941176, 0.901961, 0.54902, 1)
+wire_bus_color = Color(1, 0.498039, 0.313726, 1)
+nominal_cell_size = 64
+nominal_thickness = 3
+pattern = 0
+metadata/_custom_type_script = "uid://b1ediuf1dgusm"

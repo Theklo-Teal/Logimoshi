@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://b1t4gh54u1t7d"]
+
+[ext_resource type="Script" uid="uid://dd72175ad2ct0" path="res://Components/wire_element.gd" id="1_f1ago"]
+
+[node name="Wire" type="Control"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_f1ago")

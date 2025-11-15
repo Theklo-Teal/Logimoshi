@@ -1,0 +1,278 @@
+[gd_scene load_steps=4 format=3 uid="uid://cslb36xg3mg2e"]
+
+[ext_resource type="Script" uid="uid://dptoxtclrk84b" path="res://Flowcharter.gd" id="1_ngjrd"]
+
+[sub_resource type="GDScript" id="GDScript_rhmuf"]
+resource_name = "flowcharter_background"
+script/source = "extends ColorRect
+
+var zoom : float
+var origin : Vector2
+var style : FlowchartStyle
+var true_thickness : float
+
+func _ready() -> void:
+	if style == null:
+		style = FlowchartStyle.new()
+
+func _draw() -> void:
+	zoom = get_parent().get_work_zoom()
+	origin = get_parent().get_work_coord()
+	style = get_parent().style
+	
+	true_thickness = style.nominal_thickness * zoom
+	if true_thickness <= 1:
+		true_thickness = -1
+	
+	color = style.backdrop
+	
+	match style.pattern:
+		FlowchartStyle.SQUARE:
+			draw_square_grid()
+		#FlowchartStyle.DOTTED:
+			#draw_dotted_grid()
+		#FlowchartStyle.ISO_DOTTED:
+			#draw_iso_dotted_grid()
+		#FlowchartStyle.TRI_VERT:
+			#draw_tri_vert_grid()
+		#FlowchartStyle.TRI_HORZ:
+			#draw_tri_horz_grid()
+
+#region Drawing Primitives
+func draw_vertical_lines(spacing, offset:Vector2):
+	var coverage = 0
+	while coverage < size.x + spacing:
+		var displacement = coverage - offset.x
+		var start = Vector2(displacement, 0)
+		var stop = Vector2(displacement, size.y)
+		draw_line(start, stop, style.grid_color, true_thickness)
+		coverage += spacing
+
+func draw_horizontal_lines(spacing, offset:Vector2):
+	var coverage = 0
+	# Draw horizontal lines
+	while coverage < size.y + style.nominal_cell_size:
+		var displacement = coverage - offset.y
+		var start = Vector2(0, displacement)
+		var stop = Vector2(size.x, displacement)
+		draw_line(start, stop, style.grid_color, true_thickness)
+		coverage += spacing
+
+#func draw_tri_diagonals(spacing, offset:Vector2):
+	#var skew = tan(PI / 6) * size.x
+	#var coverage = 0
+	#while coverage < size.y:
+		## Falling from right to left
+		#var start = Vector2( 0, coverage - offset.y)
+		#var stop = Vector2(size.x, coverage + skew - offset.y )
+		#draw_line(start, stop, style.grid_color, true_thickness)
+		## Climbing from left to right
+		#start = Vector2(size.x, coverage - offset.y)
+		#stop = Vector2(0, coverage - skew - offset.y)
+		#draw_line(start, stop, style.grid_color, style.nominal_thickness)
+		## Climbing from right to left
+		#start = Vector2(0, coverage - offset.y)
+		#stop = Vector2(size.x, coverage - skew - offset.y)
+		#draw_line(start, stop, style.grid_color, style.nominal_thickness)
+		## Falling from left from right
+		#start = Vector2(size.x, coverage - offset.y)
+		#stop = Vector2(0, coverage + skew - offset.y)
+		#draw_line(start, stop, style.grid_color, style.nominal_thickness)
+		#
+		#coverage += spacing
+#endregion
+
+#region Grid Drawing
+func draw_square_grid():
+	
+	var offset : Vector2
+	offset.x = fmod(origin.x, style.nominal_cell_size * zoom)
+	offset.y = fmod(origin.y, style.nominal_cell_size * zoom)
+	
+	draw_vertical_lines(style.nominal_cell_size * zoom, offset)
+	draw_horizontal_lines(style.nominal_cell_size * zoom, offset)
+	
+	# Draw Origin Decoration Rectangles
+	var sizing = Vector2.ONE * style.nominal_cell_size * zoom
+	draw_rect(Rect2(-origin, sizing), style.grid_color)
+	draw_rect(Rect2(-origin - sizing, sizing), style.grid_color)
+	
+	# Draw Origin Axis
+	var axis_thick = max(true_thickness, true_thickness * 1.5)
+	var start = Vector2(-origin.x, 0)
+	var stop = Vector2(-origin.x, size.y)
+	draw_line(start, stop, style.axis_color, axis_thick)
+	start = Vector2(0, -origin.y)
+	stop = Vector2(size.x, -origin.y)
+	draw_line(start, stop, style.axis_color, axis_thick)
+
+#func draw_dotted_grid():
+	#var offset : Vector2
+	#offset.x = fmod(%Cam.global_position.x, style.nominal_cell_size)
+	#offset.y = fmod(%Cam.global_position.y, style.nominal_cell_size)
+	#
+	#for place_x in range(-style.nominal_cell_size, size.x + style.nominal_cell_size, style.nominal_cell_size ):
+		#for place_y in range(-style.nominal_cell_size, size.y + style.nominal_cell_size, style.nominal_cell_size):
+			#var place = Vector2(place_x, place_y) - offset
+			#draw_circle(place, style.nominal_thickness, style.grid_color)
+#
+#func draw_iso_dotted_grid():
+	#var offset : Vector2
+	#offset.x = fmod(%Cam.global_position.x, style.nominal_cell_size)
+	#offset.y = fmod(%Cam.global_position.y, style.nominal_cell_size)
+	#
+	#for place_x in range(-style.nominal_cell_size, size.x + style.nominal_cell_size, style.nominal_cell_size ):
+		#var idx : int = 0
+		#for place_y in range(-style.nominal_cell_size, size.y + style.nominal_cell_size, style.nominal_cell_size):
+			#var place : Vector2
+			#if idx % 2 == 0:
+				#place = Vector2(place_x, place_y) - offset
+			#else:
+				#place = Vector2(place_x + style.nominal_cell_size * 0.5, place_y) - offset
+			#draw_circle(place, style.nominal_thickness, style.grid_color)
+			#idx += 1
+#
+#func draw_tri_vert_grid():
+	#var tri_height = (style.nominal_cell_size / 2.0) / tan(PI / 6.0)
+	#
+	#var offset : Vector2
+	#offset.x = fmod(%Cam.global_position.x, tri_height)
+	#offset.y = fmod(%Cam.global_position.y, style.nominal_cell_size)
+	#
+	#draw_vertical_lines(tri_height, offset)
+	#
+	#draw_tri_diagonals(style.nominal_cell_size, offset)
+#
+#func draw_tri_horz_grid():
+	#var tri_height = (style.nominal_cell_size / 2.0) / tan(PI / 6.0)
+	#
+	#var offset : Vector2
+	#offset.x = fmod(%Cam.global_position.x, tri_height)
+	#offset.y = fmod(%Cam.global_position.y, style.nominal_cell_size)
+	#
+	#draw_horizontal_lines(tri_height, offset)
+	#
+	#draw_tri_diagonals(style.nominal_cell_size, offset)
+#endregion
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yp86o"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.333333, 0.333333, 0.333333, 0.666667)
+shadow_size = 4
+shadow_offset = Vector2(4, 4)
+
+[node name="Flowcharter" type="Control"]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_default_cursor_shape = 3
+script = ExtResource("1_ngjrd")
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = SubResource("GDScript_rhmuf")
+
+[node name="Workspace" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="Workspace"]
+disable_3d = true
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
+
+[node name="Cam" type="Camera2D" parent="Workspace/SubViewport"]
+unique_name_in_owner = true
+
+[node name="Components" type="Node" parent="Workspace/SubViewport"]
+unique_name_in_owner = true
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -113.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 0
+mouse_force_pass_scroll_events = false
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_yp86o")
+
+[node name="cam_ctrl" type="GridContainer" parent="MarginContainer/PanelContainer"]
+layout_mode = 2
+mouse_filter = 0
+columns = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/PanelContainer/cam_ctrl"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="cursor_pos_x" type="Label" parent="MarginContainer/PanelContainer/cam_ctrl/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cursor X"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="cursor_pos_y" type="Label" parent="MarginContainer/PanelContainer/cam_ctrl/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cursor Y"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="goto_origin" type="Button" parent="MarginContainer/PanelContainer/cam_ctrl"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Goto
+Origin"
+
+[node name="Label" type="Label" parent="MarginContainer/PanelContainer/cam_ctrl"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 0
+text = "Zoom: "
+horizontal_alignment = 2
+
+[node name="reset_zoom" type="Button" parent="MarginContainer/PanelContainer/cam_ctrl"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Reset"
+
+[connection signal="pressed" from="MarginContainer/PanelContainer/cam_ctrl/goto_origin" to="." method="_on_goto_origin_pressed"]
+[connection signal="mouse_entered" from="MarginContainer/PanelContainer/cam_ctrl/Label" to="." method="_on_reset_zoom_mouse_entered"]
+[connection signal="mouse_exited" from="MarginContainer/PanelContainer/cam_ctrl/Label" to="." method="_on_reset_zoom_mouse_exited"]
+[connection signal="mouse_entered" from="MarginContainer/PanelContainer/cam_ctrl/reset_zoom" to="." method="_on_reset_zoom_mouse_entered"]
+[connection signal="mouse_exited" from="MarginContainer/PanelContainer/cam_ctrl/reset_zoom" to="." method="_on_reset_zoom_mouse_exited"]
+[connection signal="pressed" from="MarginContainer/PanelContainer/cam_ctrl/reset_zoom" to="." method="_on_reset_zoom_pressed"]

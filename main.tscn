@@ -1,0 +1,139 @@
+[gd_scene load_steps=6 format=3 uid="uid://c8u0qaep8phe0"]
+
+[ext_resource type="PackedScene" uid="uid://dyxpfnbyn7d8e" path="res://header.tscn" id="1_db2e0"]
+[ext_resource type="PackedScene" uid="uid://bon3pxd4dl5an" path="res://tray.tscn" id="2_30mi0"]
+[ext_resource type="Resource" uid="uid://dsb2dpwlbo83f" path="res://Themes/Flowcharts/gold_over_blue.tres" id="3_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://cslb36xg3mg2e" path="res://Flowcharter.tscn" id="4_rkhke"]
+
+[sub_resource type="GDScript" id="GDScript_opvx4"]
+script/source = "extends Node
+
+func _ready() -> void:
+	%header.read_settings()
+	%footer.read_settings()
+
+func _exit_tree() -> void:
+	G.setts.save(\"res://settings.ini\")
+
+#region FOOTER
+func _on_footer_add_component(component: String) -> void:
+	var path = \"res://Components/\"+component+\".tscn\"
+	if FileAccess.file_exists(path):
+		var comp = load(path).instantiate()
+		comp.flowcharter = %Flowchart
+		comp.add_to_group(\"LAYER_\"+%header.get_curr_layer_title())
+		%Flowchart.new_element(comp)
+func _on_footer_footer_collapsed(is_collapsed: bool) -> void:
+	%footer_splitter.dragging_enabled = is_collapsed
+#endregion
+
+
+#region Simulation Timming
+func _on_ticker_timeout() -> void:
+	get_tree().call_group(\"Update_On_Tick\", \"tick_update\")
+
+func _on_header_sim_stepped() -> void:
+	_on_ticker_timeout()
+
+func _on_header_sim_exec_changed(stopped: bool) -> void:
+	if stopped:
+		$Ticker.stop()
+	else:
+		$Ticker.start()
+
+func _on_header_sim_rate_changed(value: float) -> void:
+	$Ticker.wait_time = 1/value
+
+#endregion
+
+#region Handling Layers
+func _on_header_layer_selected(title: String) -> void:
+	%footer.set_layer_data(title)
+	get_tree().call_group(\"Component_Nodes\", \"hide\")
+	get_tree().call_group(\"LAYER_\"+title, \"show\")
+
+func _on_footer_layer_edited(layer_data: Dictionary) -> void:
+	var old_layer_title = %header.get_curr_layer_title()
+	for comp in get_tree().get_nodes_in_group(\"LAYER_\"+old_layer_title):
+		comp.remove_from_group(\"LAYER_\"+old_layer_title)
+		comp.add_to_group(\"LAYER_\"+layer_data.title)
+	
+	%header.set_curr_layer_title(layer_data.title)
+#endregion
+"
+
+[node name="Main" type="Node"]
+script = SubResource("GDScript_opvx4")
+
+[node name="Ticker" type="Timer" parent="."]
+wait_time = 0.6
+autostart = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_bottom = 6
+
+[node name="footer_splitter" type="VSplitContainer" parent="UI/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer/footer_splitter"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="header" parent="UI/MarginContainer/footer_splitter/VBoxContainer" instance=ExtResource("1_db2e0")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="workspace" type="HBoxContainer" parent="UI/MarginContainer/footer_splitter/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+alignment = 1
+
+[node name="left" type="PanelContainer" parent="UI/MarginContainer/footer_splitter/VBoxContainer/workspace"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/MarginContainer/footer_splitter/VBoxContainer/workspace/left"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Flowchart" parent="UI/MarginContainer/footer_splitter/VBoxContainer/workspace" instance=ExtResource("4_rkhke")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+style = ExtResource("3_1bvp3")
+
+[node name="right" type="PanelContainer" parent="UI/MarginContainer/footer_splitter/VBoxContainer/workspace"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/MarginContainer/footer_splitter/VBoxContainer/workspace/right"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="footer" parent="UI/MarginContainer/footer_splitter" instance=ExtResource("2_30mi0")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.3
+
+[connection signal="timeout" from="Ticker" to="." method="_on_ticker_timeout"]
+[connection signal="layer_selected" from="UI/MarginContainer/footer_splitter/VBoxContainer/header" to="." method="_on_header_layer_selected"]
+[connection signal="sim_exec_changed" from="UI/MarginContainer/footer_splitter/VBoxContainer/header" to="." method="_on_header_sim_exec_changed"]
+[connection signal="sim_rate_changed" from="UI/MarginContainer/footer_splitter/VBoxContainer/header" to="." method="_on_header_sim_rate_changed"]
+[connection signal="sim_stepped" from="UI/MarginContainer/footer_splitter/VBoxContainer/header" to="." method="_on_header_sim_stepped"]
+[connection signal="add_component" from="UI/MarginContainer/footer_splitter/footer" to="." method="_on_footer_add_component"]
+[connection signal="footer_collapsed" from="UI/MarginContainer/footer_splitter/footer" to="." method="_on_footer_footer_collapsed"]
+[connection signal="layer_edited" from="UI/MarginContainer/footer_splitter/footer" to="." method="_on_footer_layer_edited"]

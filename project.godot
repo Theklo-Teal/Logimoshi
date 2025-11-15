@@ -1,0 +1,41 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Logimoshi"
+config/tags=PackedStringArray("app", "experim", "sandbox")
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.5", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+G="*res://global.gd"
+Dialogues="*res://Dialogues.tscn"
+
+[display]
+
+window/subwindows/embed_subwindows=false
+
+[global_group]
+
+Update_On_Tick="Things which are components in a simulation."
+Note_Element="This is a note or comment in the schematic."
+
+[gui]
+
+theme/custom="res://Themes/Main_Theme.tres"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+textures/default_filters/use_nearest_mipmap_filter=true
+textures/default_filters/anisotropic_filtering_level=0

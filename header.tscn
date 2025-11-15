@@ -1,0 +1,228 @@
+[gd_scene load_steps=3 format=3 uid="uid://dyxpfnbyn7d8e"]
+
+[sub_resource type="GDScript" id="GDScript_uxnlu"]
+script/source = "extends HBoxContainer
+
+signal layer_selected(title:String)
+signal sim_rate_changed(value:float)
+signal sim_exec_changed(stopped:bool)
+signal sim_stepped()
+
+func _ready() -> void:
+	%file_menu.get_popup().id_pressed.connect(_on_file_menu_item_pressed)
+	
+	for idx in range(%layer_tabs.tab_count):
+		layer_tabs.append(%layer_tabs.get_tab_title(idx))
+	_on_layer_tabs_tab_selected(%layer_tabs.current_tab)
+
+func _exit_tree() -> void:
+	G.setts.set_value(\"0\", \"sim_auto\", not %Pause_Sim.button_pressed)
+	G.setts.set_value(\"0\", \"sim_rate\", %Rate_Sim.value)
+	G.setts.set_value(\"0\", \"show_notes\", %show_notes.button_pressed)
+
+func read_settings():
+	%Pause_Sim.button_pressed = not G.setts.get_value(\"0\", \"sim_auto\", false)
+	%Rate_Sim.value = G.setts.get_value(\"0\", \"sim_rate\", 2.0)
+	%show_notes.button_pressed = G.setts.get_value(\"0\", \"show_notes\", true)
+
+func _on_file_menu_item_pressed(id:int):
+	match id:
+		0:
+			Dialogues.get_node(\"LoadFile\").popup()
+		1:
+			Dialogues.get_node(\"SaveFile\").popup()
+
+
+func _on_show_notes_toggled(pressed: bool) -> void:
+	for each in get_tree().get_nodes_in_group(\"Component_Note\"):
+		if pressed and each.is_in_group(\"LAYER_\" + get_curr_layer_title()):
+			each.show()
+		else:
+			each.hide()
+
+
+#region Handling the TabBar and layers.
+var layer_tabs : Array[String]  # [tab_idx] = \"tab_title\" ; Track the tabs to their titles regardless of re-arrangement. It would be a lot cooler, if each tab had an fixed ID that could be indexed to find them.
+
+func get_curr_layer_title():
+	return %layer_tabs.get_tab_title(%layer_tabs.current_tab)
+
+func set_curr_layer_title(title:String):
+	var idx = %layer_tabs.current_tab
+	layer_tabs[idx] = title
+	%layer_tabs.set_tab_title(idx, title)
+
+
+func _on_layer_tabs_tab_selected(tab: int) -> void:
+	layer_selected.emit(%layer_tabs.get_tab_title(tab))
+
+func _on_add_layer_pressed() -> void:
+	var tab_title = \"New Layer\"
+	layer_tabs.append(tab_title)
+	%layer_tabs.add_tab(tab_title)
+
+func _on_layer_tabs_active_tab_rearranged(idx_to: int) -> void:
+	var idx_from = layer_tabs.find(%layer_tabs.get_tab_title(idx_to)) 
+	var from = layer_tabs.pop_at(idx_from)
+	layer_tabs.insert(idx_to, from)
+
+func _on_layer_tabs_tab_close_pressed(tab: int) -> void:
+	if %layer_tabs.tab_count > 1:
+		%layer_tabs.remove_tab(tab)
+		layer_tabs.remove_at(tab)
+
+#endregion
+
+#region Sim Timer Control
+func _on_pause_sim_toggled(pressed: bool) -> void:
+	%Pause_Sim.text = [\"Running\",\"Stopped\"][int(pressed)]
+	%Pause_Sim.self_modulate = [Color.LIME_GREEN, Color.RED][int(pressed)]
+	%Step_Sim.visible = pressed
+	%Rate_Sim.visible = not pressed
+	sim_exec_changed.emit(pressed)
+
+func _on_rate_sim_value_changed(value: float) -> void:
+	sim_rate_changed.emit(value)
+
+func _on_step_sim_pressed() -> void:
+	sim_stepped.emit()
+#endregion
+"
+
+[sub_resource type="GDScript" id="GDScript_nifk0"]
+resource_name = "rate_sim"
+script/source = "@tool
+extends Button
+
+signal value_changed(value:float)
+
+@export var value : float = 1.0 :
+	set(val):
+		value = clamp(val, min_val, max_val)
+		text = str(value).pad_zeros(1) + \" Hz\"
+		value_changed.emit(value)
+
+const min_val = 0.5
+const max_val = 1000.0
+
+var drag_start : float
+var val_start : float
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.is_pressed():
+		drag_start = event.position.x
+		val_start = value
+		
+	if button_pressed and event is InputEventMouseMotion:
+		var drag_dist = event.position.x - drag_start
+		var drag_weight = inverse_lerp(0, size.x * 2, drag_dist)
+		value = snapped(value + drag_weight * 10, 0.5) 
+		
+"
+
+[node name="header" type="HBoxContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 66.0
+grow_horizontal = 2
+script = SubResource("GDScript_uxnlu")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="top_menu" type="HBoxContainer" parent="VBoxContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="Spacer_1" type="Control" parent="VBoxContainer/PanelContainer/top_menu"]
+custom_minimum_size = Vector2(22, 0)
+layout_mode = 2
+
+[node name="file_menu" type="MenuButton" parent="VBoxContainer/PanelContainer/top_menu"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Project"
+item_count = 3
+popup/item_0/text = "Open..."
+popup/item_0/id = 0
+popup/item_1/text = "Save..."
+popup/item_1/id = 1
+popup/item_2/text = "Export..."
+popup/item_2/id = 2
+
+[node name="MenuButton2" type="MenuButton" parent="VBoxContainer/PanelContainer/top_menu"]
+layout_mode = 2
+text = "Schematic"
+
+[node name="MenuButton3" type="MenuButton" parent="VBoxContainer/PanelContainer/top_menu"]
+layout_mode = 2
+text = "Help"
+
+[node name="Spacer_2" type="Control" parent="VBoxContainer/PanelContainer/top_menu"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="show_notes" type="CheckButton" parent="VBoxContainer/PanelContainer/top_menu"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Show Notes"
+
+[node name="layer_tabs" type="TabBar" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+current_tab = 0
+tab_close_display_policy = 1
+drag_to_rearrange_enabled = true
+tab_count = 2
+tab_0/title = "Layer_Zero"
+tab_1/title = "Layer_One"
+
+[node name="GridContainer" type="GridContainer" parent="."]
+layout_mode = 2
+columns = 2
+
+[node name="Isolate_Scheme" type="Button" parent="GridContainer"]
+layout_mode = 2
+focus_mode = 0
+text = "Isolate"
+
+[node name="Pause_Sim" type="Button" parent="GridContainer"]
+unique_name_in_owner = true
+self_modulate = Color(0.196078, 0.8, 0.196078, 1)
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "Running"
+
+[node name="Add_Layer" type="Button" parent="GridContainer"]
+layout_mode = 2
+focus_mode = 0
+text = "+Layer"
+
+[node name="Step_Sim" type="Button" parent="GridContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Step"
+
+[node name="Rate_Sim" type="Button" parent="GridContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "1.0 Hz"
+script = SubResource("GDScript_nifk0")
+
+[connection signal="toggled" from="VBoxContainer/PanelContainer/top_menu/show_notes" to="." method="_on_show_notes_toggled"]
+[connection signal="active_tab_rearranged" from="VBoxContainer/layer_tabs" to="." method="_on_layer_tabs_active_tab_rearranged"]
+[connection signal="tab_close_pressed" from="VBoxContainer/layer_tabs" to="." method="_on_layer_tabs_tab_close_pressed"]
+[connection signal="tab_selected" from="VBoxContainer/layer_tabs" to="." method="_on_layer_tabs_tab_selected"]
+[connection signal="toggled" from="GridContainer/Pause_Sim" to="." method="_on_pause_sim_toggled"]
+[connection signal="pressed" from="GridContainer/Add_Layer" to="." method="_on_add_layer_pressed"]
+[connection signal="pressed" from="GridContainer/Step_Sim" to="." method="_on_step_sim_pressed"]
+[connection signal="value_changed" from="GridContainer/Rate_Sim" to="." method="_on_rate_sim_value_changed"]
