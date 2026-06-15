@@ -6,6 +6,8 @@ Other projects:
 - [The Github for source codes and portfolio](https://github.com/Theklo-Teal)
 - [Ko-fi is where I'll accept donations](https://ko-fi.com/paracortical)
 
+# NOTE
+This project has be refactored and superseded by [Wicked Haywire](https://github.com/Theklo-Teal/Wicked_Haywire).
 
 # DESCRIPTION
 A sort of circuit simulator for digital logic that's intuitive to use, made in the Godot Engine. I intended to use it to test my ideas on signal propagation and have novel components that more realistic simulators don't have.
